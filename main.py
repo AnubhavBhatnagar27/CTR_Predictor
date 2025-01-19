@@ -2,6 +2,7 @@
 
 import pandas as pd
 import numpy as np
+import scikit-learn as sklearn
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import log_loss, roc_auc_score

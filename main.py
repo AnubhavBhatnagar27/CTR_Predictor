@@ -10,10 +10,10 @@ import lightgbm as lgb
 import joblib
 from sklearn.linear_model import LogisticRegression
 
-# 1. Generate a synthetic dataset with 10 numeric columns (binary or integers)
+# Generating a synthetic dataset with 10 numeric columns (binary or integers)
 np.random.seed(42)
 
-# Let's create a DataFrame with 10000 rows and 10 binary/integer columns
+# DataFrame Creation with 10000 rows and 10 binary/integer columns
 data_size = 10000
 df = pd.DataFrame({
     'Ad_Impressions': np.random.randint(0, 2, data_size),  # Binary: Whether the ad was shown
@@ -29,36 +29,41 @@ df = pd.DataFrame({
     'click': np.random.randint(0, 2, data_size)             # Target variable (binary: clicked or not)
 })
 
-# 2. Data Preprocessing
-# Assuming 'click' is the target variable (binary classification: 0 or 1)
+# Data Preprocessing
+# 'click' is the target variable (binary classification: 0 or 1)
 y = df['click']
 
-# Drop the target variable 'click' from the features
+# Dropping the target variable 'click' from the features
 X = df.drop(columns=['click'])
 
-# Fill missing values with the mean of the respective columns (if any)
+# Filling the missing values with the mean of the respective columns
 X = X.fillna(X.mean())
 
-# Split the dataset into training and test sets (80% training, 20% testing)
+# Splitting the dataset into training and test sets (80% training, 20% testing)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 3. Scaling the features using StandardScaler
+# Scaling the features using StandardScaler
 scaler = StandardScaler()
 
-# Fit the scaler and transform the data
-X_train_scaled = scaler.fit_transform(X_train)  # Directly apply to X_train without np.asarray()
-X_test_scaled = scaler.transform(X_test)  # Directly apply to X_test without np.asarray()
+# Fitting the scaler and transforming the data
+X_train_scaled = scaler.fit_transform(X_train)  
+X_test_scaled = scaler.transform(X_test)  
 
-# 4. Build and train Basic Models
-# 4.1 Logistic Regression (Basic Model 1)
+# Buidling and Training Basic Models
+# Logistic Regression Model
 log_reg_model = LogisticRegression(max_iter=1000, random_state=42)
 log_reg_model.fit(X_train_scaled, y_train)
 
-# 4.2 Random Forest Classifier (Basic Model 2)
+# Random Forest Classifier Model
 rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
 rf_model.fit(X_train_scaled, y_train)
 
-# 5. Evaluate Basic Models using Log Loss and ROC AUC
+# Bulding and Training Advanced Model
+# LightGBM Model
+lgb_model = lgb.LGBMClassifier(n_estimators=100, random_state=42)
+lgb_model.fit(X_train_scaled, y_train)
+
+# Evaluation of all models using Log Loss and ROC AUC
 # Logistic Regression
 y_pred_lr = log_reg_model.predict_proba(X_test_scaled)[:, 1]
 logloss_lr = log_loss(y_test, y_pred_lr)
@@ -69,25 +74,19 @@ y_pred_rf = rf_model.predict_proba(X_test_scaled)[:, 1]
 logloss_rf = log_loss(y_test, y_pred_rf)
 roc_auc_rf = roc_auc_score(y_test, y_pred_rf)
 
-# Print evaluation metrics for Basic Models
-print(f"Logistic Regression - Log Loss: {logloss_lr:.4f}, ROC AUC: {roc_auc_lr:.4f}")
-print(f"Random Forest - Log Loss: {logloss_rf:.4f}, ROC AUC: {roc_auc_rf:.4f}")
-
-# 6. Build and train Advanced Models
-# 6.1 LightGBM (Advanced Model 1)
-lgb_model = lgb.LGBMClassifier(n_estimators=100, random_state=42)
-lgb_model.fit(X_train_scaled, y_train)
-
-# 7. Evaluate Advanced Models using Log Loss and ROC AUC
 # LightGBM
 y_pred_lgb = lgb_model.predict_proba(X_test_scaled)[:, 1]
 logloss_lgb = log_loss(y_test, y_pred_lgb)
 roc_auc_lgb = roc_auc_score(y_test, y_pred_lgb)
 
+# Print evaluation metrics for Basic Models
+print(f"Logistic Regression - Log Loss: {logloss_lr:.4f}, ROC AUC: {roc_auc_lr:.4f}")
+print(f"Random Forest - Log Loss: {logloss_rf:.4f}, ROC AUC: {roc_auc_rf:.4f}")
+
 # Print evaluation metrics for LightGBM
 print(f"LightGBM - Log Loss: {logloss_lgb:.4f}, ROC AUC: {roc_auc_lgb:.4f}")
 
-# 8. Select the Best Model based on ROC AUC
+# Selection of the Best Model based on ROC AUC
 best_model = None
 if roc_auc_lr > roc_auc_rf and roc_auc_lr > roc_auc_lgb:
     best_model = log_reg_model
@@ -101,13 +100,10 @@ else:
 
 print(f"Best model selected: {best_model_name}")
 
-# 9. Hyperparameter tuning for the selected model (if needed)
-# You can include tuning for RandomForest and LightGBM using GridSearchCV if desired.
-
-# 10. Retrain the best model using the best parameters found
+# Retrain the best model using the scaled and transformed found
 best_model.fit(X_train_scaled, y_train)
 
-# 11. Save the best model to a file
+# Saving best model to a file
 joblib.dump(best_model, 'best_model.pkl')
 joblib.dump(scaler, 'scaler.pkl')
 print("Best model saved as 'best_model.pkl'")
@@ -140,16 +136,16 @@ with st.form(key='input_form'):
     user_location = st.selectbox('User Location (0 = Rural, 1 = Urban)', [0, 1])
 
     # Integer Features
-    feature1 = st.number_input('Feature 1 (1-10)', min_value=1, max_value=10, value=1)
-    feature2 = st.number_input('Feature 2 (1-10)', min_value=1, max_value=10, value=1)
-    feature3 = st.number_input('Feature 3 (1-10)', min_value=1, max_value=10, value=1)
-    feature4 = st.number_input('Feature 4 (1-10)', min_value=1, max_value=10, value=1)
+    num_clicks = st.number_input('Number of Clicks (1-10)', min_value=1, max_value=10, value=1)
+    num_views = st.number_input('Number of Views (1-10)', min_value=1, max_value=10, value=1)
+    session_duration = st.number_input('Session Duration (1-10)', min_value=1, max_value=10, value=1)
+    ad_position = st.number_input('Ad Position (1-10)', min_value=1, max_value=10, value=1)
 
     submit_button = st.form_submit_button("Predict CTR")
 
 if submit_button:
     input_features = [ad_impressions, device_type, time_of_day, ad_category, age_group, user_location,
-                      feature1, feature2, feature3, feature4]
+                      num_clicks, num_views, session_duration, ad_position]
     ctr_prediction = predict_ctr(input_features)
     st.subheader("Predicted CTR Probability:")
     st.write(f"The predicted CTR is: {ctr_prediction:.2f}%")
